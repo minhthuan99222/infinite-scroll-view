@@ -17,7 +17,7 @@ class ProductModule extends VuexModule {
   productListingResponse: ProductListingResponse =
     ProductListingResponse.empty();
   status: Status = Status.Loaded;
-  errorMessages = "";
+  errorMessage = "";
 
   @Action
   async handleLoadProductList(payload: {
@@ -54,14 +54,14 @@ class ProductModule extends VuexModule {
 
   @Mutation
   setErrorMessages(errorMessages: string) {
-    this.errorMessages = errorMessages;
+    this.errorMessage = errorMessages;
   }
 
   @Mutation
   reset() {
     this.productListingResponse = ProductListingResponse.empty();
     this.status = Status.Loaded;
-    this.errorMessages = "";
+    this.errorMessage = "";
   }
 }
 export const ProductStore: ProductModule = getModule(ProductModule);
