@@ -17,7 +17,7 @@
 import { Component, Watch, Vue, Ref } from "vue-property-decorator";
 import ProductListing from "@/screens/components/ProductListing.vue";
 import { ProductStore } from "@/screens/stores/ProductStore";
-import { Debounce } from "@/core/decorator/debounce";
+import { Debounce } from "@/common/decorator/debounce";
 import { Status } from "@/common/enums/Status";
 
 @Component({
