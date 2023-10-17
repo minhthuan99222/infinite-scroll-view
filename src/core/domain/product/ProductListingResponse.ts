@@ -16,4 +16,8 @@ export class ProductListingResponse {
       obj.total
     );
   }
+
+  static empty(): ProductListingResponse {
+    return new ProductListingResponse([], 0, 0, 0);
+  }
 }
