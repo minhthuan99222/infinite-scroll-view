@@ -11,8 +11,8 @@ export class ProductListingResponse {
   static fromObject(obj: any): ProductListingResponse {
     return new ProductListingResponse(
       obj.products.map((item: any) => ProductInfo.fromObject(item)),
-      obj.from,
-      obj.size,
+      obj.skip,
+      obj.limit,
       obj.total
     );
   }

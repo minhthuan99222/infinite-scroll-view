@@ -1,5 +1,5 @@
 <template>
-  <div class="product-screen">
+  <div  class="product-screen">
     <div class="product-screen--search">
       <input v-model="keyword">
     </div>
@@ -7,15 +7,18 @@
         <ProductListing
           class="product-screen--product-listing"
           :products="productListingResponse.products"
+          @loadMore="handleLoadMore"
         ></ProductListing>
     </status-widget>
   </div>
 </template>
 
-<script>
-import { Component, Vue } from "vue-property-decorator";
+<script lang="ts">
+import { Component, Watch, Vue, Ref } from "vue-property-decorator";
 import ProductListing from "@/screens/components/ProductListing.vue";
 import { ProductStore } from "@/screens/stores/ProductStore";
+import { Debounce } from "@/core/decorator/debounce";
+import { Status } from "@/common/enums/Status";
 
 @Component({
   components: {
@@ -24,30 +27,77 @@ import { ProductStore } from "@/screens/stores/ProductStore";
 })
 export default class ProductScreen extends Vue {
   keyword = "";
+  status = Status.Loaded;
+  error = "";
 
-  get status() {
-    return ProductStore.status;
-  }
+  @Ref()
+  private scroller?: HTMLDivElement;
 
-  get error() {
-    return ProductStore.errorMessage;
-  }
 
   get productListingResponse() {
     return ProductStore.productListingResponse;
   }
 
-  async handleRetry() {
-    await ProductStore.handleLoadProductList({
-      from: this.productListingResponse.from,
-      keyword: this.keyword,
-      size: this.productListingResponse.size,
-    });
+  showError(message: string) {
+    this.status = Status.Error;
+    this.error = message;
   }
+
+  async handleRetry() {
+    try {
+      const result = await ProductStore.handleLoadProductList({
+        from: this.productListingResponse.from,
+        keyword: this.keyword,
+        size: this.productListingResponse.size,
+      });
+      ProductStore.setProductList(result);
+    } catch (e) {
+      this.showError(e.message)
+      console.error("ProductScreen::handleRetry::error", e);
+
+    }
+
+  }
+  @Debounce(300)
+  @Watch('keyword')
+  async onKeywordChanged() {
+    console.log("ProductScreen::onKeywordChanged::", this.keyword);
+
+    try {
+      const result = await ProductStore.handleLoadProductList({ from: 0, keyword: this.keyword });
+      ProductStore.setProductList(result);
+    } catch (e) {
+      this.showError(e.message) ;
+      console.error("ProductScreen::onKeywordChanged::error", e);
+    }
+  }
+
+  async handleLoadMore(){
+    try {
+      const result = await ProductStore.handleLoadProductList({
+        from: this.productListingResponse.from + this.productListingResponse.size,
+        keyword: this.keyword,
+        size: this.productListingResponse.size,
+      });
+      ProductStore.appendProductList(result);
+    } catch (e) {
+      this.showError(e.message) ;
+      console.error("ProductScreen::handleLoadMore::error", e);
+    }
+  }
+
 
   async created() {
     console.log("ProductScreen::created");
-    await ProductStore.handleLoadProductList({ from: 0, keyword: "" });
+    try {
+      this.status = Status.Loading;
+      const result = await ProductStore.handleLoadProductList({ from: 0, keyword: "" });
+      ProductStore.setProductList(result);
+      this.status = Status.Loaded;
+    } catch (e) {
+      this.showError(e.message) ;
+      console.error("ProductScreen::created::error", e);
+    }
   }
 
   beforeDestroy() {

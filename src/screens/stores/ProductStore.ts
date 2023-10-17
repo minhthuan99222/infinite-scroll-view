@@ -7,7 +7,6 @@ import {
 } from "vuex-module-decorators";
 import { ProductRepository } from "@/core/repository/ProductRepository";
 import { ProductListingResponse } from "@/core/domain/product";
-import { Status } from "@/common/enums/Status";
 import store from "@/common/stores/index";
 
 @Module({ name: "ProductStore", store: store, dynamic: true, namespaced: true })
@@ -16,35 +15,32 @@ class ProductModule extends VuexModule {
   private readonly productRepository = new ProductRepository();
   productListingResponse: ProductListingResponse =
     ProductListingResponse.empty();
-  status: Status = Status.Loaded;
-  errorMessage = "";
 
   @Action
   async handleLoadProductList(payload: {
     keyword: string;
     from: number;
     size?: number;
-  }): Promise<void> {
-    try {
+  }): Promise<ProductListingResponse> {
       const { from, size, keyword } = payload;
-      this.setStatus(Status.Loading);
-      const response = await this.productRepository.list(
-        keyword,
-        from,
-        size ?? this.DefaultLoadSize
-      );
-      this.setProductList(response);
-      this.setStatus(Status.Loaded);
-    } catch (e: any) {
-      console.error("ProductStore::handleLoadProductList::error::", e);
-      this.setStatus(Status.Error);
-      this.setErrorMessages(e.message);
-    }
+      if(from <= this.productListingResponse.total){
+        const response = await this.productRepository.list(
+          keyword,
+          from,
+          size ?? this.DefaultLoadSize
+        );
+        return response;
+      } else  {
+        return ProductListingResponse.empty();
+      }
   }
 
   @Mutation
-  setStatus(status: Status) {
-    this.status = status;
+  appendProductList(response: ProductListingResponse) {
+    this.productListingResponse.products = this.productListingResponse.products.concat(response.products);
+    this.productListingResponse.total = response.total;
+    this.productListingResponse.from = response.from;
+    this.productListingResponse.size = response.size;
   }
 
   @Mutation
@@ -52,16 +48,10 @@ class ProductModule extends VuexModule {
     this.productListingResponse = response;
   }
 
-  @Mutation
-  setErrorMessages(errorMessages: string) {
-    this.errorMessage = errorMessages;
-  }
 
   @Mutation
   reset() {
     this.productListingResponse = ProductListingResponse.empty();
-    this.status = Status.Loaded;
-    this.errorMessage = "";
   }
 }
 export const ProductStore: ProductModule = getModule(ProductModule);
