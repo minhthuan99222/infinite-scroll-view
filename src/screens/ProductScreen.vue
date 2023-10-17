@@ -29,6 +29,7 @@ export default class ProductScreen extends Vue {
   keyword = "";
   status = Status.Loaded;
   error = "";
+  private isHiddenLoading = false;
 
   @Ref()
   private scroller?: HTMLDivElement;
@@ -51,7 +52,7 @@ export default class ProductScreen extends Vue {
         size: this.productListingResponse.size,
       });
       ProductStore.setProductList(result);
-    } catch (e) {
+    } catch (e: any) {
       this.showError(e.message)
       console.error("ProductScreen::handleRetry::error", e);
 
@@ -66,24 +67,30 @@ export default class ProductScreen extends Vue {
     try {
       const result = await ProductStore.handleLoadProductList({ from: 0, keyword: this.keyword });
       ProductStore.setProductList(result);
-    } catch (e) {
+    } catch (e: any) {
       this.showError(e.message) ;
       console.error("ProductScreen::onKeywordChanged::error", e);
     }
   }
 
   async handleLoadMore(){
-    try {
-      const result = await ProductStore.handleLoadProductList({
-        from: this.productListingResponse.from + this.productListingResponse.size,
-        keyword: this.keyword,
-        size: this.productListingResponse.size,
-      });
-      ProductStore.appendProductList(result);
-    } catch (e) {
-      this.showError(e.message) ;
-      console.error("ProductScreen::handleLoadMore::error", e);
+    if(!this.isHiddenLoading){
+      try {
+        this.isHiddenLoading = true;
+        const result = await ProductStore.handleLoadProductList({
+          from: this.productListingResponse.from + this.productListingResponse.size,
+          keyword: this.keyword,
+          size: this.productListingResponse.size,
+        });
+        ProductStore.appendProductList(result);
+      } catch (e: any) {
+        this.showError(e.message) ;
+        console.error("ProductScreen::handleLoadMore::error", e);
+      } finally {
+        this.isHiddenLoading = false;
+      }
     }
+
   }
 
 
@@ -94,7 +101,7 @@ export default class ProductScreen extends Vue {
       const result = await ProductStore.handleLoadProductList({ from: 0, keyword: "" });
       ProductStore.setProductList(result);
       this.status = Status.Loaded;
-    } catch (e) {
+    } catch (e:any) {
       this.showError(e.message) ;
       console.error("ProductScreen::created::error", e);
     }
@@ -126,6 +133,11 @@ export default class ProductScreen extends Vue {
 
   &--product-listing {
       flex: 1;
+  }
+
+  &--product-listing {
+    height: calc(100% - 30px);
+    overflow: auto;
   }
 }
 </style>

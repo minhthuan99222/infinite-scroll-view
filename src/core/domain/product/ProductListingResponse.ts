@@ -1,6 +1,8 @@
 import { ProductInfo } from "./ProductInfo";
 
 export class ProductListingResponse {
+  static readonly DEFAULT_SIZE = 20;
+
   constructor(
     public products: ProductInfo[],
     public from: number,
@@ -18,6 +20,6 @@ export class ProductListingResponse {
   }
 
   static empty(): ProductListingResponse {
-    return new ProductListingResponse([], 0, 0, 0);
+    return new ProductListingResponse([], 0, ProductListingResponse.DEFAULT_SIZE, ProductListingResponse.DEFAULT_SIZE);
   }
 }

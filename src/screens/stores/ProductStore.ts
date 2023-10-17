@@ -11,7 +11,6 @@ import store from "@/common/stores/index";
 
 @Module({ name: "ProductStore", store: store, dynamic: true, namespaced: true })
 class ProductModule extends VuexModule {
-  private readonly DefaultLoadSize = 20;
   private readonly productRepository = new ProductRepository();
   productListingResponse: ProductListingResponse =
     ProductListingResponse.empty();
@@ -23,11 +22,11 @@ class ProductModule extends VuexModule {
     size?: number;
   }): Promise<ProductListingResponse> {
       const { from, size, keyword } = payload;
-      if(from <= this.productListingResponse.total){
+      if(from < this.productListingResponse.total){
         const response = await this.productRepository.list(
           keyword,
           from,
-          size ?? this.DefaultLoadSize
+          size ?? ProductListingResponse.DEFAULT_SIZE
         );
         return response;
       } else  {
